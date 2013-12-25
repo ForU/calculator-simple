@@ -3,7 +3,7 @@
 #define INCLUDE_CALCULATOR_HPP
 
 #include <string>
-#include "stack.h"
+#include "stack.hh"
 
 enum State
 {
