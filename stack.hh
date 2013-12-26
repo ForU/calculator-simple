@@ -16,6 +16,7 @@ public:
     ~Stack() { destory(); }
 
     T& top() { return m_tunk.at(m_sp); }
+    const T& top() const { return m_tunk.at(m_sp); }
     void push(T val);
     T pop() { return m_tunk[m_sp--]; }
     bool empty() { return m_sp == STACK_SP_INIT; }
@@ -31,7 +32,6 @@ private:
     std::vector<T> m_tunk;
     int m_sp;
 };
-
 
 template<class T>
 void Stack<T>::init(int size)

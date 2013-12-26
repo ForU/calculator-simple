@@ -1,5 +1,5 @@
 #include "log.hh"
-#include "calculator_core.hh"
+#include "arithmetic_expression.hh"
 
 int main(int argc, char *argv[])
 {
@@ -8,12 +8,17 @@ int main(int argc, char *argv[])
         return 0;
     }
 
-    const char* sep = "________________________________________________________________";
+    const char* sep = "____________________________________";
+    double val=0;
     for ( int i = 1; i < argc;  ++i) {
-        PR_TRACE("%s\"%s\"", sep, argv[i]);
+        PR_TRACE("%s%s\n\"%s\"", sep, sep, argv[i]);
         ArithmeticExpression ari_exp(argv[i]);
         ari_exp.parse();
-        PR_TRACE("rpn = \"%s\"", ari_exp.getRpnExpression().c_str());
+        ari_exp.getExpressionValue(val);
+        PR_TRACE("raw = \"%s\", rpn = \"%s\", val='%g'",
+                 ari_exp.getArithmeticExpression().c_str(),
+                 ari_exp.getRpnExpression().c_str(),
+                 val);
     }
 
     return 0;
