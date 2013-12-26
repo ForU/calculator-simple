@@ -5,7 +5,7 @@ A simple calculator Using FSM-based programming
 
 > **NOTE:**  This is just a scratch, so do not expect too much
 
-![](https://github.com/ForU/calculator-simple/state_transition.png.png?raw=true "state transition procedure")
+![](https://raw.github.com/ForU/calculator-simple/master/state_transition.png "state transition procedure")
 
 
 ## example
