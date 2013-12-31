@@ -47,16 +47,13 @@ public:
     ~ArithmeticExpression() {}
 
     bool parse();
-
-    // TODO: [2013-12-26] set interface
-
     const std::string& getRpnExpression() const {
         return m_rpn_expression;
     }
     const std::string& getArithmeticExpression() const {
         return m_arithmetic_expression;
     }
-    bool getExpressionValue(double &val);
+    bool getExpressionValue(double &val) const;
 
 private:
     bool handle(char c);

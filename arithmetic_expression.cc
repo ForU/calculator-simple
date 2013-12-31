@@ -54,7 +54,7 @@ ArithmeticExpression::m_state_table[ST_UPPER][CT_UPPER] = {
 const char* ArithmeticExpression::getStateStr(State state) const
 {
     if ( state >= ST_UPPER || state < ST_NON ) {
-        PR_ERROR("state is not valid, state=%d", (int)state);
+        PR_ERROR("state is not valid, state=\"%d\"", (int)state);
         return m_state_info[ST_UPPER].state_str;
     }
     return m_state_info[state].state_str;
@@ -147,12 +147,12 @@ bool ArithmeticExpression::handle(char c)
 {
     CharType type = getCharType(c);
     if ( CT_UPPER == type) {
-        PR_ERROR("invalid char type, argument char=%c",
+        PR_ERROR("invalid char type, argument char='%c'",
                  m_arithmetic_expression[m_parse_pos]);
         return false;
     }
-    PR_TRACE("current state = \"%s\", coming char = '%c', remaining=\"%s\"",
-             getCurStateStr(), c, &m_arithmetic_expression[m_parse_pos]);
+    PR_TRACE("current state=\"%s\", coming char = '%c', remaining=\"%s\"",
+             getCurStateStr(), c, &m_arithmetic_expression[m_parse_pos+1]);
 
     StateTable* table_item = &m_state_table[m_state][type];
     bool rc = handleAction(table_item->action_type);
@@ -185,23 +185,23 @@ bool ArithmeticExpression::handleOperator()
     const char& cur_opr = m_arithmetic_expression[m_parse_pos];
     char top = m_operator_stack.top();
     while ( getPriority(top) >= getPriority(cur_opr) && '(' != top ) {
+        // update rpn
         m_rpn_expression.push_back(top);
         m_rpn_expression.push_back(' ');
-
+        // calculate
         if (! calculate(top)) return false;
-
         // update new top
         m_operator_stack.pop();
         top = m_operator_stack.top();
     }
-    PR_TRACE("pushing operator:%c, rpn:%s",
+    PR_TRACE("pushing operator:'%c', rpn:\"%s\"",
              cur_opr, m_rpn_expression.c_str());
     m_operator_stack.push(cur_opr);
     return true;
 }
 bool ArithmeticExpression::handleError()
 {
-    PR_ERROR("error occurs pos=%d, tailing=\"%s\", raw=\"%s\"",
+    PR_ERROR("error occurs pos=\"%d\", tailing=\"%s\", raw=\"%s\"",
              m_parse_pos,
              &m_arithmetic_expression[m_parse_pos],
              m_arithmetic_expression.c_str());
@@ -216,11 +216,14 @@ bool ArithmeticExpression::handleOperand()
 
     // sucks for fetching size each time for operand
     int size = m_arithmetic_expression.size();
-    char c = m_arithmetic_expression[m_parse_pos];
     bool dot_occurred = false;
     int dot_part_length = 0;
 
-    while ( ('.' == c || (c >= '0' && c <= '9')) && m_parse_pos < size ) {
+    while ( m_parse_pos < size ) {
+        char c = m_arithmetic_expression[m_parse_pos];
+        if ( ! ('.' == c || (c >= '0' && c <= '9'))) {
+            break;
+        }
         if ( '.' == c && dot_occurred) {
             PR_ERROR("dot occurs again");
             return false;
@@ -257,7 +260,7 @@ bool ArithmeticExpression::handleOperand()
     snprintf(val_str, sizeof val_str, "%g ", rst_val);
     m_rpn_expression.append(val_str);
 
-    PR_TRACE("rst part=%g, int part=%g, dot part=%g, dot occurred = %s",
+    PR_TRACE("rst part=\"%g\", int part=\"%g\", dot part=\"%g\", dot occurred=\"%s\"",
              rst_val, int_val, dot_val, dot_occurred ? "yes" : "no");
     return true;
 }
@@ -323,7 +326,7 @@ bool ArithmeticExpression::calculate(char opr)
     default: PR_ERROR("unknown operator='%c'", opr); return false;
     }
 
-    PR_TRACE("opr=%c, l_opd=%g, r_opd=%g, rst=%g",
+    PR_TRACE("opr='%c', l_opd=\"%g\", r_opd=\"%g\", rst=\"%g\"",
              opr, l_opd, r_opd, m_operand_stack.top());
     return true;
 }
@@ -342,7 +345,7 @@ bool ArithmeticExpression::parse()
             PR_ERROR("failed to handle, "
                      "tailing=\"%s\", pos=%d, "
                      "char='%c', raw exp=\"%s\", "
-                     "state = \"%s\"",
+                     "state=\"%s\"",
                      &m_arithmetic_expression[m_parse_pos],
                      m_parse_pos,
                      m_arithmetic_expression[m_parse_pos],
@@ -359,13 +362,14 @@ bool ArithmeticExpression::parse()
     }
     // check program terminal state
     if ( ! isOnTerminalState() ) {
-        PR_ERROR("program in not on terminal state, current state = \"%s\"",
+        PR_ERROR("program in not on terminal state, "
+                 "current state=\"%s\"",
                  getCurStateStr());
         return false;
     }
     // check whether parenthesis matches
     if ( 0 != m_lp_count ) {
-        PR_ERROR("open left parenthesis exists, count=%d",
+        PR_ERROR("open left parenthesis exists, count=\"%d\"",
                  m_lp_count);
         return false;
     }
@@ -381,26 +385,28 @@ bool ArithmeticExpression::parse()
         m_operator_stack.pop();
     }
 
-    PR_TRACE("arithmetic expression successfully parsed, rpn = \"%s\"", m_rpn_expression.c_str());
+    PR_TRACE("arithmetic expression successfully parsed, "
+             "rpn=\"%s\"", m_rpn_expression.c_str());
     if ( m_operand_stack.empty() ) {
         PR_TRACE("no value calculated");
     } else {
-        PR_TRACE("value = %g", m_operand_stack.top());
+        PR_TRACE("value=\"%g\"", m_operand_stack.top());
     }
     return true;
 }
 
-bool ArithmeticExpression::getExpressionValue(double &val)
+bool ArithmeticExpression::getExpressionValue(double &val) const
 {
     if ( !isOnTerminalState() ) {
-        PR_ERROR("program in not on terminal state, current state = \"%s\"",
+        PR_ERROR("program in not on terminal state, "
+                 "current state=\"%s\"",
                  getCurStateStr());
         return false;
     }
     bool stack_empty = m_operand_stack.empty();
     if ( ! stack_empty || (stack_empty && ST_NON == m_state)) {
         val = stack_empty ? 0 : m_operand_stack.top();
-        PR_TRACE("return value = %g", val);
+        PR_TRACE("return value=\"%g\"", val);
         return true;
     }
     PR_ERROR("the arithmetic expression is not successfully calculated");
